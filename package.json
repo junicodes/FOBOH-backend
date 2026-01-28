@@ -19,6 +19,7 @@
   "author": "Godwin Obi",
   "license": "ISC",
   "dependencies": {
+    "better-sqlite3": "^11.7.0",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
     "drizzle-orm": "^0.45.1",
