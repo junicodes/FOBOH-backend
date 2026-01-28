@@ -1,4 +1,3 @@
-import swaggerJsdoc from "swagger-jsdoc";
 import { SwaggerDefinition } from "swagger-jsdoc";
 
 const swaggerDefinition: SwaggerDefinition = {
@@ -88,10 +87,133 @@ const swaggerDefinition: SwaggerDefinition = {
   },
 };
 
-const options = {
-  definition: swaggerDefinition,
-  // NOTE: We no longer use `src/modules/*`. Route JSDoc lives in `src/routes/*`.
-  apis: ["./src/routes/**/*.ts", "./src/controllers/**/*.ts", "./src/schemas/**/*.ts"],
-};
-
-export const swaggerSpec = swaggerJsdoc(options);
+/**
+ * NOTE on Vercel:
+ * Vercel Serverless often bundles TS into a single function and does not keep the original
+ * source files on disk. `swagger-jsdoc` relies on reading files via globs, so it can return
+ * an empty spec in production even when it works locally.
+ *
+ * To keep Swagger reliable in serverless, we define the `paths` explicitly here.
+ */
+export const swaggerSpec = {
+  ...swaggerDefinition,
+  paths: {
+    "/products": {
+      get: {
+        tags: ["Products"],
+        summary: "Get all products",
+        parameters: [
+          { name: "search", in: "query", schema: { type: "string" } },
+          { name: "category", in: "query", schema: { type: "string" } },
+          { name: "subCategory", in: "query", schema: { type: "string" } },
+          { name: "segment", in: "query", schema: { type: "string" } },
+          { name: "brand", in: "query", schema: { type: "string" } },
+          { name: "sku", in: "query", schema: { type: "string" } },
+        ],
+        responses: {
+          200: { description: "List of products" },
+        },
+      },
+    },
+    "/products/search": {
+      get: {
+        tags: ["Products"],
+        summary: "Search products",
+        parameters: [
+          { name: "q", in: "query", schema: { type: "string" } },
+          { name: "category", in: "query", schema: { type: "string" } },
+          { name: "subCategory", in: "query", schema: { type: "string" } },
+          { name: "segment", in: "query", schema: { type: "string" } },
+          { name: "brand", in: "query", schema: { type: "string" } },
+          { name: "sku", in: "query", schema: { type: "string" } },
+        ],
+        responses: {
+          200: { description: "Search results" },
+        },
+      },
+    },
+    "/products/brands": {
+      get: {
+        tags: ["Products"],
+        summary: "Get all brands",
+        responses: { 200: { description: "List of brands" } },
+      },
+    },
+    "/products/categories": {
+      get: {
+        tags: ["Products"],
+        summary: "Get all categories",
+        responses: { 200: { description: "List of categories" } },
+      },
+    },
+    "/products/sub-categories": {
+      get: {
+        tags: ["Products"],
+        summary: "Get all sub-categories",
+        responses: { 200: { description: "List of sub-categories" } },
+      },
+    },
+    "/products/segments": {
+      get: {
+        tags: ["Products"],
+        summary: "Get all segments",
+        responses: { 200: { description: "List of segments" } },
+      },
+    },
+    "/products/skus": {
+      get: {
+        tags: ["Products"],
+        summary: "Get all SKUs",
+        responses: { 200: { description: "List of SKUs" } },
+      },
+    },
+    "/pricing-profiles": {
+      get: {
+        tags: ["Pricing Profiles"],
+        summary: "Get all pricing profiles",
+        responses: { 200: { description: "List of pricing profiles" } },
+      },
+      post: {
+        tags: ["Pricing Profiles"],
+        summary: "Create a new pricing profile",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/PricingProfile" },
+            },
+          },
+        },
+        responses: { 201: { description: "Created pricing profile" } },
+      },
+    },
+    "/pricing-profiles/{id}": {
+      get: {
+        tags: ["Pricing Profiles"],
+        summary: "Get pricing profile by ID",
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "integer" } }],
+        responses: { 200: { description: "Pricing profile" }, 404: { description: "Not found" } },
+      },
+      put: {
+        tags: ["Pricing Profiles"],
+        summary: "Update pricing profile",
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "integer" } }],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/PricingProfile" },
+            },
+          },
+        },
+        responses: { 200: { description: "Updated pricing profile" } },
+      },
+      delete: {
+        tags: ["Pricing Profiles"],
+        summary: "Delete pricing profile",
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "integer" } }],
+        responses: { 200: { description: "Deleted pricing profile" } },
+      },
+    },
+  },
+} as const;
