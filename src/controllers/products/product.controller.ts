@@ -25,7 +25,7 @@ export class ProductController {
       const dbProducts = await this.productService.getAll(filters);
 
       // Map backend product format to frontend format
-      const products = dbProducts.map((product) => ({
+      const products = dbProducts.map((product: { id: any; title: any; skuCode: any; quantity: any; brandName: any; categoryName: any; subCategoryName: any; segmentName: any; globalWholesalePrice: any; }) => ({
         id: product.id,
         name: product.title,
         sku: product.skuCode || "",
@@ -60,7 +60,7 @@ export class ProductController {
       const dbProducts = await this.productService.search(query, filters);
 
       // Map backend product format to frontend format
-      const products = dbProducts.map((product) => ({
+      const products = dbProducts.map((product: { id: any; title: any; skuCode: any; quantity: any; brandName: any; categoryName: any; subCategoryName: any; segmentName: any; globalWholesalePrice: any; }) => ({
         id: product.id,
         name: product.title,
         sku: product.skuCode || "",
