@@ -5,6 +5,6 @@ export default {
   out: "./src/db/migrations",
   dialect: "sqlite",
   dbCredentials: {
-    url: "./sqlite.db",
+    url: process.env.VERCEL ? "/tmp/sqlite.db" : process.env.DATABASE_PATH || "./sqlite.db",
   },
 } satisfies Config;
