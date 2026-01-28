@@ -5,7 +5,6 @@ import {
   products,
   skus,
   categories,
-  brands,
   NewPricingProfile,
   NewPricingProfileProduct,
   PricingProfile,
