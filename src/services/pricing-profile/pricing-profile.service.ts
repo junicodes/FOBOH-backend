@@ -1,14 +1,31 @@
 import { getDb } from "../../config/db";
-import {
-  pricingProfiles,
-  pricingProfileProducts,
-  products,
-  skus,
-  categories,
+import { config } from "../../config/env";
+// Import from the correct schema based on environment
+import type {
+  pricingProfiles as PricingProfilesType,
+  pricingProfileProducts as PricingProfileProductsType,
+  products as ProductsType,
+  skus as SkusType,
+  categories as CategoriesType,
   NewPricingProfile,
   NewPricingProfileProduct,
   PricingProfile,
-} from "../../db/schema";
+} from "../../db/schemas/dev.schema";
+import type {
+  pricingProfiles as PricingProfilesProdType,
+  pricingProfileProducts as PricingProfileProductsProdType,
+  products as ProductsProdType,
+  skus as SkusProdType,
+  categories as CategoriesProdType,
+} from "../../db/schemas/prod.schema";
+
+// Use the correct schema types based on environment
+const isProd = config.nodeEnv === "production";
+const pricingProfiles = isProd ? (require("../../db/schemas/prod.schema").pricingProfiles as typeof PricingProfilesProdType) : (require("../../db/schemas/dev.schema").pricingProfiles as typeof PricingProfilesType);
+const pricingProfileProducts = isProd ? (require("../../db/schemas/prod.schema").pricingProfileProducts as typeof PricingProfileProductsProdType) : (require("../../db/schemas/dev.schema").pricingProfileProducts as typeof PricingProfileProductsType);
+const products = isProd ? (require("../../db/schemas/prod.schema").products as typeof ProductsProdType) : (require("../../db/schemas/dev.schema").products as typeof ProductsType);
+const skus = isProd ? (require("../../db/schemas/prod.schema").skus as typeof SkusProdType) : (require("../../db/schemas/dev.schema").skus as typeof SkusType);
+const categories = isProd ? (require("../../db/schemas/prod.schema").categories as typeof CategoriesProdType) : (require("../../db/schemas/dev.schema").categories as typeof CategoriesType);
 import { eq, desc, inArray } from "drizzle-orm";
 import { calculateAdjustment } from "./calculateAdjustment";
 
@@ -89,16 +106,16 @@ export class PricingProfileService {
     }
 
     // Create pricing profile
-    const profileData: NewPricingProfile = {
-      name: data.name,
-      adjustmentType: data.adjustmentType,
-      adjustmentValue: data.adjustmentValue,
-      incrementType: data.incrementType,
-    };
-
+    // IMPORTANT: Don't include createdAt/updatedAt - PostgreSQL will use DEFAULT now()
+    // Drizzle's .defaultNow() might convert to Unix timestamp, so we exclude them entirely
     const insertedProfiles = await db
       .insert(pricingProfiles)
-      .values(profileData)
+      .values({
+        name: data.name,
+        adjustmentType: data.adjustmentType,
+        adjustmentValue: data.adjustmentValue,
+        incrementType: data.incrementType,
+      })
       .returning();
 
     const insertedProfile = insertedProfiles[0];
@@ -133,7 +150,7 @@ export class PricingProfileService {
       .where(eq(pricingProfileProducts.profileId, insertedProfile.id));
 
     // Format response for pricing table
-    const pricingTable = profileProductsData.map((item) => ({
+    const pricingTable = profileProductsData.map((item: { productId: any; productTitle: any; productSku: any; categoryName: any; basedOnPrice: number; newPrice: number; }) => ({
       id: item.productId,
       title: item.productTitle || "",
       sku: item.productSku || "",
@@ -193,7 +210,7 @@ export class PricingProfileService {
       .where(eq(pricingProfileProducts.profileId, id));
 
     // Format response for pricing table
-    const pricingTable = profileProducts.map((item) => ({
+    const pricingTable = profileProducts.map((item: { productId: any; productTitle: any; productSku: any; categoryName: any; basedOnPrice: number; newPrice: number; }) => ({
       id: item.productId,
       title: item.productTitle || "",
       sku: item.productSku || "",

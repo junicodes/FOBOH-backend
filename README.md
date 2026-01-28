@@ -1,6 +1,6 @@
 # FOBOH Backend API
 
-A Node.js + Express.js backend API for managing pricing profiles and products, built with TypeScript, Drizzle ORM, and SQLite.
+A Node.js + Express.js backend API for managing pricing profiles and products, built with TypeScript, Drizzle ORM, PostgreSQL (production), and SQLite (local development).
 
 **Backend runs on port 4001**  
 **Frontend runs on port 4000**
@@ -33,26 +33,60 @@ A Node.js + Express.js backend API for managing pricing profiles and products, b
 npm install
 ```
 
-2. Set up environment variables (create `.env` file):
+2. Set up environment variables (create `.env` file for **local dev**):
 ```env
+# Backend HTTP config
 PORT=4001
 NODE_ENV=development
+
+# Local SQLite database (dev)
 DATABASE_PATH=./sqlite.db
+
+# CORS (frontend URL hitting the backend)
+CORS_ORIGIN_DEV=http://localhost:4000
+
+# Optional: when testing production-like CORS locally
+CORS_ORIGIN_PROD=https://foboh-frontend.vercel.app
+```
+
+For **production on Vercel (backend project env)** you should set:
+
+```env
+NODE_ENV=production
+
+# PostgreSQL (production database)
+DATABASE_URL=postgres://user:password@host:port/database
+DATABASE_CA=-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----  # Optional: SSL CA certificate
+
+# CORS: frontend URL hosted on Vercel
+CORS_ORIGIN_PROD=https://foboh-frontend.vercel.app
 ```
 
 3. Generate database migrations:
 ```bash
+# For local development (SQLite)
 npm run db:generate
+
+# For production (PostgreSQL) - requires NODE_ENV=production and DATABASE_URL
+NODE_ENV=production npm run db:generate
 ```
 
 4. Run migrations:
 ```bash
+# For local development (SQLite)
 npm run db:migrate
+
+# For production (PostgreSQL) - requires NODE_ENV=production and DATABASE_URL
+NODE_ENV=production npm run db:migrate
 ```
 
 5. Seed the database:
 ```bash
+# For local development (SQLite)
 npm run seed
+
+# For production (PostgreSQL) - requires NODE_ENV=production and DATABASE_URL
+NODE_ENV=production npm run seed
 ```
 
 6. Start the development server:
@@ -170,51 +204,75 @@ Services orchestrate:
 - **Express.js** - Web framework
 - **TypeScript** - Type safety and better DX
 - **Drizzle ORM** - Type-safe database queries
-- **SQLite / libsql (Turso)** - Database engines
+- **SQLite** - Local development database
+- **PostgreSQL** - Production database
 
 ### Database Engines (Dev vs Production)
 
-This backend uses **two SQLite-compatible engines** depending on environment:
+This backend uses **different database engines** depending on environment:
 
 - **Development / Local**
-  - **Engine:** `better-sqlite3` (file-based SQLite)
+  - **Engine:** SQLite (`better-sqlite3`)
   - **Location:** `./sqlite.db` (configurable via `DATABASE_PATH`)
-  - **Why:** Zero configuration, easy to inspect, great DX
+  - **Why:** Zero configuration, easy to inspect, great developer experience, perfect for local development
 
-- **Production (Vercel)**
-  - **Engine:** `libsql` via Turso (`@libsql/client`)
-  - **Location:** Remote, managed, persistent database
-  - **Why:** Vercel serverless functions have ephemeral file systems; local `.db` files (including `/tmp/sqlite.db`) are not suitable for persistent data. Turso provides a SQLite-compatible, globally distributed database that works well with Drizzle.
+- **Production (Server/Vercel)**
+  - **Engine:** PostgreSQL (`pg` / `node-postgres`)
+  - **Location:** Remote PostgreSQL database (managed service like Aiven, AWS RDS, etc.)
+  - **Why:** Production-grade database with better concurrent write performance, built-in replication, better tooling, and persistent storage suitable for serverless environments
 
 **How selection works in code (`src/config/db.ts`):**
 
-- If `NODE_ENV === "production"` **and** `TURSO_DATABASE_URL` is defined:
-  - Use `@libsql/client` + `drizzle-orm/libsql` to connect to Turso
+- If `NODE_ENV === "production"` **and** `DATABASE_URL` is defined:
+  - Use `pg` + `drizzle-orm/node-postgres` to connect to PostgreSQL
+  - Uses `src/config/db.prod.ts` and `src/db/schemas/prod.schema.ts`
 - Otherwise (local dev, tests, etc.):
   - Use `better-sqlite3` + `drizzle-orm/better-sqlite3` against `DATABASE_PATH` (default `./sqlite.db`)
+  - Uses `src/config/db.dev.ts` and `src/db/schemas/dev.schema.ts`
 
-This keeps **development simple** while giving you a **real, persistent DB in production** without changing any application code.
+This keeps **development simple** with SQLite while providing a **production-grade PostgreSQL database** for server deployments without changing any application code.
+
+**Schema Files:**
+- **Development:** `src/db/schemas/dev.schema.ts` (SQLite schema)
+- **Production:** `src/db/schemas/prod.schema.ts` (PostgreSQL schema)
+- Both schemas have the same table structure, but use database-specific Drizzle types
+- Migrations are generated separately for each environment (`src/db/migrations/dev/` and `src/db/migrations/prod/`)
+
+**Seed Files:**
+- **Development:** `src/db/seed/dev.seed.ts` (SQLite seed)
+- **Production:** `src/db/seed/prod.seed.ts` (PostgreSQL seed)
+- Both contain the same sample data, adapted for their respective database engines
 
 ### Environment Variables for Databases
 
-Local development (`.env`):
+**Local Development (`.env`):**
 
 ```env
 PORT=4001
 NODE_ENV=development
+
+# SQLite database path (local development)
 DATABASE_PATH=./sqlite.db
+
+# CORS origins
+CORS_ORIGIN_DEV=http://localhost:4000
 ```
 
-Production (Vercel backend project settings):
+**Production (Vercel backend project settings or server environment):**
 
 ```env
 NODE_ENV=production
-TURSO_DATABASE_URL=libsql://<your-db-name>.turso.io
-TURSO_AUTH_TOKEN=***************   # do NOT commit this
+
+# PostgreSQL connection URL (production)
+DATABASE_URL=postgres://user:password@host:port/database
+DATABASE_CA=-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----  # Optional: SSL CA certificate for secure connections
+
+# CORS origins
+CORS_ORIGIN_PROD=https://foboh-frontend.vercel.app
 ```
 
-> Note: The actual Turso URL and token are stored only in environment variables.  
-> They are **never** hard-coded in the repository.
+> **Security Note:** Database credentials are stored only in environment variables.  
+> They are **never** hard-coded in the repository or committed to version control.
 
 ### Why Drizzle ORM?
 
@@ -267,13 +325,17 @@ pricingProfileProducts (id, profileId, productId, basedOnPrice, newPrice, create
 
 #### Current Implementation Trade-offs
 
-**SQLite Database:**
-- ✅ **Pros:** Zero configuration, fast for small-medium datasets, perfect for development
-- ❌ **Cons:** Limited concurrent writes, file-based (can be bottleneck at scale)
+**SQLite Database (Local Development):**
+- ✅ **Pros:** Zero configuration, fast for small-medium datasets, perfect for development, easy to inspect
+- ❌ **Cons:** Limited concurrent writes, file-based (not suitable for production)
+
+**PostgreSQL Database (Production):**
+- ✅ **Pros:** Production-grade performance, better concurrent writes, built-in replication, persistent storage, suitable for serverless
+- ❌ **Cons:** Requires managed database service, more complex setup than SQLite
 
 **Current Search Implementation:**
-- Uses SQLite `LIKE` queries for product search
-- Works well for small datasets (< 10,000 products)
+- Uses database `LIKE` queries for product search (SQLite in dev, PostgreSQL in prod)
+- Works well for small-medium datasets (< 10,000 products)
 - Can become slow with large datasets or complex filters
 
 #### Recommended Improvements
@@ -295,28 +357,17 @@ pricingProfileProducts (id, profileId, productId, basedOnPrice, newPrice, create
 - ✅ **Scalable** - Horizontal scaling across multiple nodes
 
 **Implementation Approach:**
-1. Keep SQLite for transactional data (pricing profiles, relationships)
+1. Keep PostgreSQL for transactional data (pricing profiles, relationships)
 2. Use Elasticsearch for product search and filtering
 3. Sync products to Elasticsearch on create/update/delete
-4. Route search requests to Elasticsearch, other queries to SQLite
+4. Route search requests to Elasticsearch, other queries to PostgreSQL
 
 **Trade-off:**
 - ❌ Additional infrastructure complexity
-- ❌ Need to maintain data sync between SQLite and Elasticsearch
+- ❌ Need to maintain data sync between PostgreSQL and Elasticsearch
 - ✅ Massive performance improvement for search (10-100x faster)
 
-**2. PostgreSQL Migration (Production Scale)**
-
-**When to migrate:**
-- Concurrent writes > 10/second
-- Database size > 10GB
-- Need for replication/backup features
-
-**Benefits:**
-- Better concurrent write performance
-- Built-in replication
-- Better tooling for production
-- Drizzle supports both, so migration is straightforward
+**Note:** PostgreSQL is already used in production. This improvement would add Elasticsearch as a search layer on top of PostgreSQL.
 
 **3. Redis Caching Layer**
 
@@ -436,30 +487,40 @@ This backend is designed to deploy on Vercel:
    - Install command: `npm install`
 
 4. **Database considerations:**
-   - SQLite file is stored in `/tmp` (ephemeral in serverless)
-   - For production, consider:
-     - Using Vercel Postgres
-     - Or external SQLite storage (S3, etc.)
-     - Or migrating to PostgreSQL
+   - **Production:** Uses PostgreSQL (configured via `DATABASE_URL`)
+   - **Local Development:** Uses SQLite (`./sqlite.db`)
+   - Ensure `DATABASE_URL` and `DATABASE_CA` (if needed) are set in Vercel environment variables
 
 ### Environment Variables
 
-Required environment variables:
-- `PORT` - Server port (default: 3000)
-- `NODE_ENV` - Environment (development/production)
-- `DATABASE_PATH` - Path to SQLite database file
+**Required for all environments:**
+- `PORT` - Server port (default: 4001)
+- `NODE_ENV` - Environment (`development` or `production`)
+
+**Required for local development:**
+- `DATABASE_PATH` - Path to SQLite database file (default: `./sqlite.db`)
+- `CORS_ORIGIN_DEV` - Frontend URL for CORS (default: `http://localhost:4000`)
+
+**Required for production:**
+- `DATABASE_URL` - PostgreSQL connection string
+- `DATABASE_CA` - Optional SSL CA certificate for PostgreSQL (if required)
+- `CORS_ORIGIN_PROD` - Frontend URL for CORS (e.g., `https://foboh-frontend.vercel.app`)
 
 ## Production Improvements
 
-### 1. Database Migration
+### 1. Database Optimization
 
-**Current:** SQLite (file-based)
-**Production:** Consider PostgreSQL for:
-- Better concurrent write performance
-- Built-in replication
-- Better tooling for production
+**Current:** PostgreSQL in production, SQLite in development
 
-**Migration path:** Drizzle supports both, so migration is straightforward.
+**Already implemented:**
+- ✅ PostgreSQL for production (better concurrent writes, replication, tooling)
+- ✅ SQLite for local development (zero configuration, easy setup)
+
+**Future improvements:**
+- Add connection pooling optimization
+- Implement read replicas for high-traffic scenarios
+- Add database query performance monitoring
+- Implement database backup automation
 
 ### 2. Caching
 

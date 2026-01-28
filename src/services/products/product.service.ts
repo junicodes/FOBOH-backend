@@ -6,7 +6,7 @@ import {
   categories,
   subCategories,
   segments,
-} from "../../db/schema";
+} from "../../db/schemas/dev.schema";
 import { eq, like, or, and } from "drizzle-orm";
 
 /**

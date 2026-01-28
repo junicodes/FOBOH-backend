@@ -26,7 +26,7 @@ import {
   subCategories,
   segments,
   skus,
-} from "../../src/db/schema";
+} from "../../src/db/schemas/dev.schema";
 import { eq } from "drizzle-orm";
 
 describe("Pricing Profile API", () => {

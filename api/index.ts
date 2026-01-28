@@ -1,7 +1,7 @@
 import { createApp } from "../src/app";
 import { initDb, getDb } from "../src/config/db";
 import { seedDatabase } from "../src/db/seed";
-import { brands } from "../src/db/schema";
+import { brands } from "../src/db/schemas/dev.schema";
 
 /**
  * Vercel Serverless Function Entry Point
