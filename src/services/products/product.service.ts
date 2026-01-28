@@ -73,9 +73,9 @@ export class ProductService {
       if (filters.sku) {
         conditions.push(like(skus.skuCode, `%${filters.sku}%`));
       }
-      // Search considers all filters - searches in title and SKU
+      // Search considers all filters - searches in title and SKU (case-sensitive, respects user input)
       if (filters.search) {
-        const searchTerm = `%${filters.search.toLowerCase()}%`;
+        const searchTerm = `%${filters.search}%`;
         conditions.push(
           or(
             like(products.title, searchTerm),
@@ -133,9 +133,9 @@ export class ProductService {
 
     const conditions = [];
 
-    // Add search condition if query provided
+    // Add search condition if query provided (case-sensitive, respects user input)
     if (query) {
-      const searchTerm = `%${query.toLowerCase()}%`;
+      const searchTerm = `%${query}%`;
       conditions.push(
         or(
           like(products.title, searchTerm),
