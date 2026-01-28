@@ -1,18 +1,19 @@
 {
-  "version": 2,
-  "builds": [
-    {
-      "src": "api/index.ts",
-      "use": "@vercel/node"
+    "version": 2,
+    "buildCommand": "npm run db:generate && npm run db:migrate && npm run seed && npm test",
+    "builds": [
+      {
+        "src": "api/index.ts",
+        "use": "@vercel/node"
+      }
+    ],
+    "routes": [
+      {
+        "src": "/(.*)",
+        "dest": "api/index.ts"
+      }
+    ],
+    "env": {
+      "NODE_ENV": "production"
     }
-  ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "api/index.ts"
-    }
-  ],
-  "env": {
-    "NODE_ENV": "production"
   }
-}

@@ -9,7 +9,8 @@ dotenv.config();
 export const config = {
   port: parseInt(process.env.PORT || "4001", 10),
   nodeEnv: process.env.NODE_ENV || "development",
-  corsOrigin: process.env.CORS_ORIGIN || "http://localhost:4000",
+  corsOriginDev: process.env.CORS_ORIGIN_DEV || "http://localhost:4000",
+  corsOriginProd: process.env.CORS_ORIGIN_PROD || "https://foboh-frontend.vercel.app",
   rateLimitWindowMs: parseInt(
     process.env.RATE_LIMIT_WINDOW_MS || "900000",
     10

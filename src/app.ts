@@ -16,7 +16,7 @@ export function createApp(): Express {
   // CORS configuration
   app.use(
     cors({
-      origin: config.corsOrigin,
+      origin: config.nodeEnv === "production" ? config.corsOriginProd : config.corsOriginDev,
       credentials: true,
     })
   );

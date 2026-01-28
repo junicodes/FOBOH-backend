@@ -9,11 +9,11 @@ const swaggerDefinition: SwaggerDefinition = {
   },
   servers: [
     {
-      url: "http://localhost:4001/api/v1",
+      url: "http://localhost:4001",
       description: "Development server",
     },
     {
-      url: "https://foboh-backend-api.vercel.app/api/v1",
+      url: "https://foboh-backend-api.vercel.app",
       description: "Production (Vercel)",
     },
   ],
@@ -98,7 +98,7 @@ const swaggerDefinition: SwaggerDefinition = {
 export const swaggerSpec = {
   ...swaggerDefinition,
   paths: {
-    "/products": {
+    "/api/v1/products": {
       get: {
         tags: ["Products"],
         summary: "Get all products",
@@ -115,7 +115,7 @@ export const swaggerSpec = {
         },
       },
     },
-    "/products/search": {
+    "/api/v1/products/search": {
       get: {
         tags: ["Products"],
         summary: "Search products",
@@ -132,42 +132,42 @@ export const swaggerSpec = {
         },
       },
     },
-    "/products/brands": {
+    "/api/v1/products/brands": {
       get: {
         tags: ["Products"],
         summary: "Get all brands",
         responses: { 200: { description: "List of brands" } },
       },
     },
-    "/products/categories": {
+    "/api/v1/products/categories": {
       get: {
         tags: ["Products"],
         summary: "Get all categories",
         responses: { 200: { description: "List of categories" } },
       },
     },
-    "/products/sub-categories": {
+    "/api/v1/products/sub-categories": {
       get: {
         tags: ["Products"],
         summary: "Get all sub-categories",
         responses: { 200: { description: "List of sub-categories" } },
       },
     },
-    "/products/segments": {
+    "/api/v1/products/segments": {
       get: {
         tags: ["Products"],
         summary: "Get all segments",
         responses: { 200: { description: "List of segments" } },
       },
     },
-    "/products/skus": {
+    "/api/v1/products/skus": {
       get: {
         tags: ["Products"],
         summary: "Get all SKUs",
         responses: { 200: { description: "List of SKUs" } },
       },
     },
-    "/pricing-profiles": {
+    "/api/v1/pricing-profiles": {
       get: {
         tags: ["Pricing Profiles"],
         summary: "Get all pricing profiles",
@@ -187,7 +187,7 @@ export const swaggerSpec = {
         responses: { 201: { description: "Created pricing profile" } },
       },
     },
-    "/pricing-profiles/{id}": {
+    "/api/v1/pricing-profiles/{id}": {
       get: {
         tags: ["Pricing Profiles"],
         summary: "Get pricing profile by ID",
