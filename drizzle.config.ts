@@ -5,6 +5,8 @@ export default {
   out: "./src/db/migrations",
   dialect: "sqlite",
   dbCredentials: {
-    url: process.env.VERCEL ? "/tmp/sqlite.db" : process.env.DATABASE_PATH || "./sqlite.db",
+    // DEV: local SQLite file
+    // PROD: Turso/libsql URL (do NOT hard-code secrets here)
+    url: process.env.TURSO_DATABASE_URL || process.env.DATABASE_PATH || "./sqlite.db",
   },
 } satisfies Config;

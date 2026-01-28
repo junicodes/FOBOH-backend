@@ -170,27 +170,51 @@ Services orchestrate:
 - **Express.js** - Web framework
 - **TypeScript** - Type safety and better DX
 - **Drizzle ORM** - Type-safe database queries
-- **SQLite** - Embedded database
+- **SQLite / libsql (Turso)** - Database engines
 
-### Why SQLite?
+### Database Engines (Dev vs Production)
 
-**Advantages:**
-- ✅ Zero configuration - no separate database server needed
-- ✅ Fast for read-heavy workloads
-- ✅ Perfect for small to medium applications
-- ✅ Easy to backup (single file)
-- ✅ Great for development and prototyping
-- ✅ Works well with Vercel serverless functions
+This backend uses **two SQLite-compatible engines** depending on environment:
 
-**Tradeoffs:**
-- ❌ Limited concurrent writes (fine for most use cases)
-- ❌ No built-in user management
-- ❌ File-based (can be a bottleneck at very high scale)
+- **Development / Local**
+  - **Engine:** `better-sqlite3` (file-based SQLite)
+  - **Location:** `./sqlite.db` (configurable via `DATABASE_PATH`)
+  - **Why:** Zero configuration, easy to inspect, great DX
 
-**For Production:**
-- SQLite works well for Vercel serverless functions
-- Can easily migrate to PostgreSQL if needed (Drizzle supports both)
-- For high-traffic production, I would consider PostgreSQL
+- **Production (Vercel)**
+  - **Engine:** `libsql` via Turso (`@libsql/client`)
+  - **Location:** Remote, managed, persistent database
+  - **Why:** Vercel serverless functions have ephemeral file systems; local `.db` files (including `/tmp/sqlite.db`) are not suitable for persistent data. Turso provides a SQLite-compatible, globally distributed database that works well with Drizzle.
+
+**How selection works in code (`src/config/db.ts`):**
+
+- If `NODE_ENV === "production"` **and** `TURSO_DATABASE_URL` is defined:
+  - Use `@libsql/client` + `drizzle-orm/libsql` to connect to Turso
+- Otherwise (local dev, tests, etc.):
+  - Use `better-sqlite3` + `drizzle-orm/better-sqlite3` against `DATABASE_PATH` (default `./sqlite.db`)
+
+This keeps **development simple** while giving you a **real, persistent DB in production** without changing any application code.
+
+### Environment Variables for Databases
+
+Local development (`.env`):
+
+```env
+PORT=4001
+NODE_ENV=development
+DATABASE_PATH=./sqlite.db
+```
+
+Production (Vercel backend project settings):
+
+```env
+NODE_ENV=production
+TURSO_DATABASE_URL=libsql://<your-db-name>.turso.io
+TURSO_AUTH_TOKEN=***************   # do NOT commit this
+```
+
+> Note: The actual Turso URL and token are stored only in environment variables.  
+> They are **never** hard-coded in the repository.
 
 ### Why Drizzle ORM?
 

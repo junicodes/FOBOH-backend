@@ -1,9 +1,14 @@
-import { drizzle } from "drizzle-orm/better-sqlite3";
+import { drizzle as drizzleSqlite } from "drizzle-orm/better-sqlite3";
+import { drizzle as drizzleLibsql } from "drizzle-orm/libsql";
 import Database from "better-sqlite3";
+import { createClient } from "@libsql/client";
 import * as schema from "../db/schema";
 
+type SqliteDb = ReturnType<typeof drizzleSqlite<typeof schema>>;
+type LibsqlDb = ReturnType<typeof drizzleLibsql<typeof schema>>;
+
 let sqlite: Database.Database | null = null;
-let db: ReturnType<typeof drizzle> | null = null;
+let db: SqliteDb | LibsqlDb | null = null;
 
 /**
  * Get database instance
@@ -17,25 +22,29 @@ export function getDb() {
 
 /**
  * Database initialization
- * Creates local SQLite database file using better-sqlite3
- * Runs migrations automatically on startup
- * 
- * For Vercel: Uses /tmp directory for writable file system
+ * DEV: local SQLite file using better-sqlite3
+ * PROD: Turso/libsql using @libsql/client
  */
 export async function initDb() {
-  // Determine database path based on environment
-  // Vercel serverless functions need /tmp for writable files
-  const dbPath = process.env.VERCEL 
-    ? "/tmp/sqlite.db" 
-    : process.env.DATABASE_PATH || "sqlite.db";
-  
-  // Create local SQLite database file
-  sqlite = new Database(dbPath);
-  
-  // Initialize Drizzle following the pattern: drizzle({ client: sqlite })
-  db = drizzle({ client: sqlite, schema });
+  const isProd = process.env.NODE_ENV === "production";
 
-  console.log(`✅ Local SQLite database initialized (${dbPath})`);
+  if (isProd && process.env.TURSO_DATABASE_URL) {
+    // Production: use Turso / libsql
+    const client = createClient({
+      url: process.env.TURSO_DATABASE_URL!,
+      authToken: process.env.TURSO_AUTH_TOKEN,
+    });
+
+    db = drizzleLibsql(client, { schema });
+    console.log("✅ Connected to Turso (libsql) database for production");
+  } else {
+    // Development / local: use file-based SQLite
+    const dbPath = process.env.DATABASE_PATH || "sqlite.db";
+    sqlite = new Database(dbPath);
+    db = drizzleSqlite({ client: sqlite, schema });
+    console.log(`✅ Local SQLite database initialized (${dbPath})`);
+  }
+
   return db;
 }
 
