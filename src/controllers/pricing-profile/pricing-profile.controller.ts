@@ -1,16 +1,22 @@
 import { Request, Response, NextFunction } from "express";
-import { pricingProfileService } from "../../services/pricing-profile/pricing-profile.service";
+import { PricingProfileService, pricingProfileService } from "../../services/pricing-profile/pricing-profile.service";
 
 /**
  * Pricing Profile controller
  * Request/response handling only
  */
-export const pricingProfileController = {
+export class PricingProfileController {
+  private pricingProfileService: PricingProfileService;
+
+  constructor(pricingProfileService: PricingProfileService) {
+    this.pricingProfileService = pricingProfileService;
+  }
+
   /**
    * Create a new pricing profile
    * Calculates prices and returns pricing table data
    */
-  create: async (req: Request, res: Response, next: NextFunction) => {
+  create = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const {
         name,
@@ -26,7 +32,7 @@ export const pricingProfileController = {
         });
       }
 
-      const profile = await pricingProfileService.createProfile({
+      const profile = await this.pricingProfileService.createProfile({
         name,
         adjustmentType,
         adjustmentValue: parseFloat(adjustmentValue),
@@ -34,48 +40,48 @@ export const pricingProfileController = {
         productIds,
       });
 
-      res.status(201).json(profile);
+      return res.status(201).json(profile);
     } catch (error) {
-      next(error);
+      return next(error);
     }
-  },
+  };
 
   /**
    * Get all pricing profiles
    */
-  getAll: async (_req: Request, res: Response, next: NextFunction) => {
+  getAll = async (_req: Request, res: Response, next: NextFunction) => {
     try {
-      const profiles = await pricingProfileService.getAllProfiles();
-      res.json(profiles);
+      const profiles = await this.pricingProfileService.getAllProfiles();
+      return res.json(profiles);
     } catch (error) {
-      next(error);
+      return next(error);
     }
-  },
+  };
 
   /**
    * Get pricing profile by ID
    */
-  getById: async (req: Request, res: Response, next: NextFunction) => {
+  getById = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
         return res.status(400).json({ error: "Invalid profile ID" });
       }
 
-      const profile = await pricingProfileService.getProfileById(id);
-      res.json(profile);
+      const profile = await this.pricingProfileService.getProfileById(id);
+      return res.json(profile);
     } catch (error) {
       if (error instanceof Error && error.message.includes("not found")) {
         return res.status(404).json({ error: error.message });
       }
-      next(error);
+      return next(error);
     }
-  },
+  };
 
   /**
    * Update pricing profile
    */
-  update: async (req: Request, res: Response, next: NextFunction) => {
+  update = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
@@ -90,7 +96,7 @@ export const pricingProfileController = {
         productIds,
       } = req.body;
 
-      const profile = await pricingProfileService.updateProfile(id, {
+      const profile = await this.pricingProfileService.updateProfile(id, {
         name,
         adjustmentType,
         adjustmentValue: adjustmentValue !== undefined ? parseFloat(adjustmentValue) : undefined,
@@ -98,32 +104,37 @@ export const pricingProfileController = {
         productIds,
       });
 
-      res.json(profile);
+      return res.json(profile);
     } catch (error) {
       if (error instanceof Error && error.message.includes("not found")) {
         return res.status(404).json({ error: error.message });
       }
-      next(error);
+      return next(error);
     }
-  },
+  };
 
   /**
    * Delete pricing profile
    */
-  delete: async (req: Request, res: Response, next: NextFunction) => {
+  delete = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
         return res.status(400).json({ error: "Invalid profile ID" });
       }
 
-      await pricingProfileService.deleteProfile(id);
-      res.json({ success: true, message: "Pricing profile deleted successfully" });
+      await this.pricingProfileService.deleteProfile(id);
+      return res.json({ success: true, message: "Pricing profile deleted successfully" });
     } catch (error) {
       if (error instanceof Error && error.message.includes("not found")) {
         return res.status(404).json({ error: error.message });
       }
-      next(error);
+      return next(error);
     }
-  },
-};
+  };
+}
+
+// Export singleton instance
+export const pricingProfileController = new PricingProfileController(
+  pricingProfileService
+);

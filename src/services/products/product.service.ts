@@ -13,20 +13,20 @@ import { eq, like, or, and } from "drizzle-orm";
  * Product service
  * Business logic for products
  */
-export const productService = {
+export class ProductService {
   /**
    * Get all products with optional filtering and search
    * Joins with related tables to filter by name
    * Search considers all dropdown filters
    */
-  getAll: async (filters?: {
+  async getAll(filters?: {
     category?: string;
     subCategory?: string;
     segment?: string;
     brand?: string;
     search?: string;
     sku?: string;
-  }) => {
+  }) {
     const db = getDb();
 
     // Build base query with joins
@@ -93,19 +93,19 @@ export const productService = {
     }
 
     return await baseQuery;
-  },
+  }
 
   /**
    * Search products by title, SKU (with fuzzy matching) and optional filters
    * Search considers dropdown filters
    */
-  search: async (query: string, filters?: {
+  async search(query: string, filters?: {
     category?: string;
     subCategory?: string;
     segment?: string;
     brand?: string;
     sku?: string;
-  }) => {
+  }) {
     const db = getDb();
     
     const baseQuery = db
@@ -171,45 +171,48 @@ export const productService = {
     }
 
     return await baseQuery;
-  },
+  }
 
   /**
    * Get all brands
    */
-  getAllBrands: async () => {
+  async getAllBrands() {
     const db = getDb();
     return await db.select().from(brands);
-  },
+  }
 
   /**
    * Get all categories
    */
-  getAllCategories: async () => {
+  async getAllCategories() {
     const db = getDb();
     return await db.select().from(categories);
-  },
+  }
 
   /**
    * Get all subCategories
    */
-  getAllSubCategories: async () => {
+  async getAllSubCategories() {
     const db = getDb();
     return await db.select().from(subCategories);
-  },
+  }
 
   /**
    * Get all segments
    */
-  getAllSegments: async () => {
+  async getAllSegments() {
     const db = getDb();
     return await db.select().from(segments);
-  },
+  }
 
   /**
    * Get all SKUs (standalone, no product reference needed)
    */
-  getAllSkus: async () => {
+  async getAllSkus() {
     const db = getDb();
     return await db.select().from(skus);
-  },
-};
+  }
+}
+
+// Export singleton instance
+export const productService = new ProductService();

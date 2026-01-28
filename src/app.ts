@@ -3,7 +3,7 @@ import cors from "cors";
 import rateLimit from "express-rate-limit";
 import swaggerUi from "swagger-ui-express";
 import { config } from "./config/env";
-import { errorMiddleware } from "./middlewares/error.middleware";
+import { errorHandler } from "./middlewares/error.middleware";
 import { swaggerSpec } from "./docs/swagger";
 import productRoutes from "./routes/products/product.routes";
 import pricingProfileRoutes from "./routes/pricing-profile/pricing-profile.routes";
@@ -49,7 +49,7 @@ export function createApp(): Express {
   app.use("/api/v1/pricing-profiles", pricingProfileRoutes);
 
   // Centralized error handling (must be last)
-  app.use(errorMiddleware);
+  app.use(errorHandler);
 
   return app;
 }

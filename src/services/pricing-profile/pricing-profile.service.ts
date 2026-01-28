@@ -8,6 +8,7 @@ import {
   brands,
   NewPricingProfile,
   NewPricingProfileProduct,
+  PricingProfile,
 } from "../../db/schema";
 import { eq, desc, inArray } from "drizzle-orm";
 import { calculateAdjustment } from "./calculateAdjustment";
@@ -17,19 +18,19 @@ import { calculateAdjustment } from "./calculateAdjustment";
  * Business logic for pricing profile operations
  * Uses calculateAdjustment service for price calculations
  */
-export const pricingProfileService = {
+export class PricingProfileService {
   /**
    * Create a new pricing profile
    * Calculates prices on the backend using calculateAdjustment service
    * Returns the pricing table data for frontend display
    */
-  createProfile: async (data: {
+  async createProfile(data: {
     name: string;
     adjustmentType: "fixed" | "dynamic";
     adjustmentValue: number;
     incrementType: "increase" | "decrease";
     productIds: number[];
-  }) => {
+  }) {
     const db = getDb();
 
     // Get products with their details
@@ -143,28 +144,28 @@ export const pricingProfileService = {
       newPrice: item.newPrice,
     }));
 
-    return {
+      return {
       ...insertedProfile,
       products: profileProductsData,
       pricingTable, // Return pricing table data for frontend display
     };
-  },
+  }
 
   /**
    * Get all pricing profiles
    */
-  getAllProfiles: async () => {
+  async getAllProfiles() {
     const db = getDb();
     return await db
       .select()
       .from(pricingProfiles)
       .orderBy(desc(pricingProfiles.createdAt));
-  },
+  }
 
   /**
    * Get pricing profile by ID with pricing table data
    */
-  getProfileById: async (id: number) => {
+  async getProfileById(id: number) {
     const db = getDb();
     const profile = await db
       .select()
@@ -208,13 +209,13 @@ export const pricingProfileService = {
       products: profileProducts,
       pricingTable, // Return pricing table data for frontend display
     };
-  },
+  }
 
   /**
    * Update pricing profile
    * Recalculates prices if adjustment parameters or products change
    */
-  updateProfile: async (
+  async updateProfile(
     id: number,
     data: {
       name?: string;
@@ -223,7 +224,7 @@ export const pricingProfileService = {
       incrementType?: "increase" | "decrease";
       productIds?: number[];
     }
-  ) => {
+  ): Promise<PricingProfile> {
     const db = getDb();
 
     // Get existing profile to use current values if not provided
@@ -325,13 +326,13 @@ export const pricingProfileService = {
       }
     }
 
-    return await pricingProfileService.getProfileById(id);
-  },
+    return await this.getProfileById(id);
+  }
 
   /**
    * Delete pricing profile
    */
-  deleteProfile: async (id: number) => {
+  async deleteProfile(id: number) {
     const db = getDb();
 
     // Delete profile products first
@@ -343,5 +344,8 @@ export const pricingProfileService = {
     await db.delete(pricingProfiles).where(eq(pricingProfiles.id, id));
 
     return { success: true };
-  },
-};
+  }
+}
+
+// Export singleton instance
+export const pricingProfileService = new PricingProfileService();

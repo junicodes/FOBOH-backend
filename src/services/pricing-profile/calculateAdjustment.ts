@@ -1,11 +1,6 @@
 import { clampPrice, roundPrice } from "../../utils/money";
 
 /**
- * Pricing adjustment calculation service
- * Pure calculation functions (SRP - Single Responsibility Principle)
- * NO side effects, NO database access
- * Includes edge case validation
- * 
  * Formulas (matching requirements):
  * Fixed + Increase: [Based On Price] + [Adjustment] = [New Price]
  *   Example: $500.00 + $20.00 = $520.00

@@ -1,12 +1,18 @@
 import { Request, Response, NextFunction } from "express";
-import { productService } from "../../services/products/product.service";
+import { ProductService, productService } from "../../services/products/product.service";
 
 /**
  * Product controller
  * Request/response handling only
  */
-export const productController = {
-  getAll: async (req: Request, res: Response, next: NextFunction) => {
+export class ProductController {
+  private productService: ProductService;
+
+  constructor(productService: ProductService) {
+    this.productService = productService;
+  }
+
+  getAll = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const filters = {
         category: req.query.category as string,
@@ -16,7 +22,7 @@ export const productController = {
         search: req.query.search as string,
         sku: req.query.sku as string,
       };
-      const dbProducts = await productService.getAll(filters);
+      const dbProducts = await this.productService.getAll(filters);
 
       // Map backend product format to frontend format
       const products = dbProducts.map((product) => ({
@@ -32,16 +38,16 @@ export const productController = {
       }));
 
       // Return in the format expected by frontend
-      res.json({
+      return res.json({
         products,
         total: products.length,
       });
     } catch (error) {
-      next(error);
+      return next(error);
     }
-  },
+  };
 
-  search: async (req: Request, res: Response, next: NextFunction) => {
+  search = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const query = (req.query.q as string) || "";
       const filters = {
@@ -51,7 +57,7 @@ export const productController = {
         brand: req.query.brand as string,
         sku: req.query.sku as string,
       };
-      const dbProducts = await productService.search(query, filters);
+      const dbProducts = await this.productService.search(query, filters);
 
       // Map backend product format to frontend format
       const products = dbProducts.map((product) => ({
@@ -67,57 +73,60 @@ export const productController = {
       }));
 
       // Return in the format expected by frontend
-      res.json({
+      return res.json({
         products,
         total: products.length,
       });
     } catch (error) {
-      next(error);
+      return next(error);
     }
-  },
+  };
 
-  getAllBrands: async (_req: Request, res: Response, next: NextFunction) => {
+  getAllBrands = async (_req: Request, res: Response, next: NextFunction) => {
     try {
-      const brands = await productService.getAllBrands();
-      res.json(brands);
+      const brands = await this.productService.getAllBrands();
+      return res.json(brands);
     } catch (error) {
-      next(error);
+      return next(error);
     }
-  },
+  };
 
-  getAllCategories: async (_req: Request, res: Response, next: NextFunction) => {
+  getAllCategories = async (_req: Request, res: Response, next: NextFunction) => {
     try {
-      const categories = await productService.getAllCategories();
-      res.json(categories);
+      const categories = await this.productService.getAllCategories();
+      return res.json(categories);
     } catch (error) {
-      next(error);
+      return next(error);
     }
-  },
+  };
 
-  getAllSubCategories: async (_req: Request, res: Response, next: NextFunction) => {
+  getAllSubCategories = async (_req: Request, res: Response, next: NextFunction) => {
     try {
-      const subCategories = await productService.getAllSubCategories();
-      res.json(subCategories);
+      const subCategories = await this.productService.getAllSubCategories();
+      return res.json(subCategories);
     } catch (error) {
-      next(error);
+      return next(error);
     }
-  },
+  };
 
-  getAllSegments: async (_req: Request, res: Response, next: NextFunction) => {
+  getAllSegments = async (_req: Request, res: Response, next: NextFunction) => {
     try {
-      const segments = await productService.getAllSegments();
-      res.json(segments);
+      const segments = await this.productService.getAllSegments();
+      return res.json(segments);
     } catch (error) {
-      next(error);
+      return next(error);
     }
-  },
+  };
 
-  getAllSkus: async (_req: Request, res: Response, next: NextFunction) => {
+  getAllSkus = async (_req: Request, res: Response, next: NextFunction) => {
     try {
-      const skus = await productService.getAllSkus();
-      res.json(skus);
+      const skus = await this.productService.getAllSkus();
+      return res.json(skus);
     } catch (error) {
-      next(error);
+      return next(error);
     }
-  },
-};
+  };
+}
+
+// Export singleton instance
+export const productController = new ProductController(productService);
