@@ -13,6 +13,10 @@ const swaggerDefinition: SwaggerDefinition = {
       url: "http://localhost:4001/api/v1",
       description: "Development server",
     },
+    {
+      url: "https://foboh-backend-api.vercel.app/api/v1",
+      description: "Production (Vercel)",
+    },
   ],
   components: {
     schemas: {
@@ -86,7 +90,8 @@ const swaggerDefinition: SwaggerDefinition = {
 
 const options = {
   definition: swaggerDefinition,
-  apis: ["./src/modules/**/*.routes.ts", "./src/modules/**/*.controller.ts"],
+  // NOTE: We no longer use `src/modules/*`. Route JSDoc lives in `src/routes/*`.
+  apis: ["./src/routes/**/*.ts", "./src/controllers/**/*.ts", "./src/schemas/**/*.ts"],
 };
 
 export const swaggerSpec = swaggerJsdoc(options);
