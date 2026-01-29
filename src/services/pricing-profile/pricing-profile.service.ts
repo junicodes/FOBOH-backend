@@ -158,6 +158,9 @@ export class PricingProfileService {
       wholesalePrice: item.basedOnPrice,
       adjustment: item.newPrice - item.basedOnPrice,
       newPrice: item.newPrice,
+      adjustmentType: data.adjustmentType,
+      originalAdjustmentValue: data.adjustmentValue,
+      incrementType: data.incrementType,
     }));
 
       return {
@@ -168,14 +171,55 @@ export class PricingProfileService {
   }
 
   /**
-   * Get all pricing profiles
+   * Get all pricing profiles with pricing table data
    */
   async getAllProfiles() {
     const db = getDb();
-    return await db
+    const profiles = await db
       .select()
       .from(pricingProfiles)
       .orderBy(desc(pricingProfiles.createdAt));
+
+    // For each profile, get its pricing table with adjustment info
+    const profilesWithTables = await Promise.all(
+      profiles.map(async (profile: typeof profiles[0]) => {
+        const profileProducts = await db
+          .select({
+            id: pricingProfileProducts.id,
+            productId: pricingProfileProducts.productId,
+            basedOnPrice: pricingProfileProducts.basedOnPrice,
+            newPrice: pricingProfileProducts.newPrice,
+            productTitle: products.title,
+            productSku: skus.skuCode,
+            categoryName: categories.name,
+          })
+          .from(pricingProfileProducts)
+          .leftJoin(products, eq(pricingProfileProducts.productId, products.id))
+          .leftJoin(skus, eq(products.skuId, skus.id))
+          .leftJoin(categories, eq(products.categoryId, categories.id))
+          .where(eq(pricingProfileProducts.profileId, profile.id));
+
+        const pricingTable = profileProducts.map((item: { productId: any; productTitle: any; productSku: any; categoryName: any; basedOnPrice: number; newPrice: number; }) => ({
+          id: item.productId,
+          title: item.productTitle || "",
+          sku: item.productSku || "",
+          category: item.categoryName || "",
+          wholesalePrice: item.basedOnPrice,
+          adjustment: item.newPrice - item.basedOnPrice,
+          newPrice: item.newPrice,
+          adjustmentType: profile.adjustmentType,
+          originalAdjustmentValue: profile.adjustmentValue,
+          incrementType: profile.incrementType,
+        }));
+
+        return {
+          ...profile,
+          pricingTable,
+        };
+      })
+    );
+
+    return profilesWithTables;
   }
 
   /**
@@ -218,6 +262,9 @@ export class PricingProfileService {
       wholesalePrice: item.basedOnPrice,
       adjustment: item.newPrice - item.basedOnPrice,
       newPrice: item.newPrice,
+      adjustmentType: profile[0].adjustmentType,
+      originalAdjustmentValue: profile[0].adjustmentValue,
+      incrementType: profile[0].incrementType,
     }));
 
     return {
