@@ -398,6 +398,16 @@ export class PricingProfileService {
   async deleteProfile(id: number) {
     const db = getDb();
 
+    const existing = await db
+      .select()
+      .from(pricingProfiles)
+      .where(eq(pricingProfiles.id, id))
+      .limit(1);
+
+    if (existing.length === 0) {
+      throw new Error(`Pricing profile with id ${id} not found`);
+    }
+
     // Delete profile products first
     await db
       .delete(pricingProfileProducts)

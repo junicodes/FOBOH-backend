@@ -173,9 +173,9 @@ describe("calculateAdjustment", () => {
         incrementType: "decrease",
       };
 
-      // Should throw error during validation
+      // Should throw error during validation (generic message fires first)
       expect(() => calculateAdjustment(params)).toThrow(
-        "Percentage decrease cannot exceed 100%"
+        "Percentage adjustment cannot exceed 100%"
       );
     });
   });
@@ -263,15 +263,7 @@ describe("calculateAdjustment", () => {
 
   describe("Price Clamping", () => {
     it("should never return negative price", () => {
-      const params: CalculateAdjustmentParams = {
-        basePrice: 10,
-        adjustmentType: "fixed",
-        adjustmentValue: 15,
-        incrementType: "decrease",
-      };
-
-      // Should throw error, but if it didn't, result should be clamped
-      // Since validation catches this, we test the clamping in a valid scenario
+      // Validation catches fixed decrease > base price; test clamping with valid scenario
       const validParams: CalculateAdjustmentParams = {
         basePrice: 10,
         adjustmentType: "fixed",

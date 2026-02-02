@@ -32,6 +32,12 @@ export class PricingProfileController {
         });
       }
 
+      if (productIds.length === 0) {
+        return res.status(400).json({
+          error: "No products found for the provided product IDs",
+        });
+      }
+
       const profile = await this.pricingProfileService.createProfile({
         name,
         adjustmentType,
@@ -42,6 +48,17 @@ export class PricingProfileController {
 
       return res.status(201).json(profile);
     } catch (error) {
+      if (error instanceof Error) {
+        const msg = error.message;
+        if (
+          msg.includes("cannot exceed") ||
+          msg.includes("must be a valid positive number") ||
+          msg.includes("No products found") ||
+          msg.includes("invalid base price")
+        ) {
+          return res.status(400).json({ error: msg });
+        }
+      }
       return next(error);
     }
   };

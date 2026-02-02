@@ -43,8 +43,8 @@ function validateCalculationParams(params: CalculateAdjustmentParams): void {
     throw new Error("Base price must be a valid positive number");
   }
 
-  // Validate adjustment value
-  if (isNaN(adjustmentValue) || adjustmentValue < 0) {
+  // Validate adjustment value (must be positive, not zero)
+  if (isNaN(adjustmentValue) || adjustmentValue <= 0) {
     throw new Error("Adjustment value must be a valid positive number");
   }
 

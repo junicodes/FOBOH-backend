@@ -32,7 +32,6 @@ import { eq } from "drizzle-orm";
 describe("Pricing Profile API", () => {
   let app: any;
   let testProductIds: number[] = [];
-  let testProfileId: number;
 
   beforeAll(async () => {
     // Initialize database
@@ -90,7 +89,7 @@ describe("Pricing Profile API", () => {
       ])
       .returning();
 
-    testProductIds = testProducts.map((p) => p.id);
+    testProductIds = testProducts.map((p: { id: number }) => p.id);
   });
 
   beforeEach(async () => {
@@ -141,7 +140,6 @@ describe("Pricing Profile API", () => {
       // Product 2: 200 + 20 = 220
       expect(response.body.pricingTable[1].newPrice).toBe(220);
 
-      testProfileId = response.body.id;
     });
 
     it("should create a pricing profile with fixed decrease adjustment", async () => {
