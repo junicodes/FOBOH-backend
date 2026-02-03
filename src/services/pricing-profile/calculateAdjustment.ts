@@ -128,3 +128,5 @@ export function calculateBatchAdjustments(
     }
   });
 }
+
+// Adjustement is the delta increase or decrease between the base price and the new price
