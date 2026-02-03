@@ -13,11 +13,23 @@ import { eq, desc, inArray } from "drizzle-orm";
 import { calculateAdjustment } from "./calculateAdjustment";
 
 /**
+ * Type for the database getter — allows injecting the db dependency (Dependency Inversion).
+ * The service no longer calls getDb() from config/db directly; the caller injects it.
+ */
+export type GetDb = () => ReturnType<typeof import("../../config/db").getDb>;
+
+/**
  * Pricing Profile service
  * Business logic for pricing profile operations
  * Uses calculateAdjustment service for price calculations
+ *
+ * SOLID:
+ * - S: Single responsibility — profile CRUD and price calculation orchestration only.
+ * - D: Dependency Inversion — depends on GetDb (injected), not on config/db directly.
  */
 export class PricingProfileService {
+  constructor(private getDb: GetDb) {}
+
   /**
    * Create a new pricing profile
    * Calculates prices on the backend using calculateAdjustment service
@@ -30,7 +42,7 @@ export class PricingProfileService {
     incrementType: "increase" | "decrease";
     productIds: number[];
   }) {
-    const db = getDb();
+    const db = this.getDb();
 
     // Get products with their details
     const selectedProducts = await db
@@ -157,7 +169,7 @@ export class PricingProfileService {
    * Get all pricing profiles with pricing table data
    */
   async getAllProfiles() {
-    const db = getDb();
+    const db = this.getDb();
     const profiles = await db
       .select()
       .from(pricingProfiles)
@@ -209,7 +221,7 @@ export class PricingProfileService {
    * Get pricing profile by ID with pricing table data
    */
   async getProfileById(id: number) {
-    const db = getDb();
+    const db = this.getDb();
     const profile = await db
       .select()
       .from(pricingProfiles)
@@ -271,7 +283,7 @@ export class PricingProfileService {
       productIds?: number[];
     }
   ): Promise<PricingProfile> {
-    const db = getDb();
+    const db = this.getDb();
 
     // Get existing profile to use current values if not provided
     const existingProfile = await db
@@ -379,7 +391,7 @@ export class PricingProfileService {
    * Delete pricing profile
    */
   async deleteProfile(id: number) {
-    const db = getDb();
+    const db = this.getDb();
 
     const existing = await db
       .select()
@@ -403,5 +415,5 @@ export class PricingProfileService {
   }
 }
 
-// Export singleton instance
-export const pricingProfileService = new PricingProfileService();
+// Export singleton — getDb injected here; class itself has no direct dependency on config/db
+export const pricingProfileService = new PricingProfileService(getDb);
